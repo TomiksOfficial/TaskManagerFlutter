@@ -12,14 +12,20 @@ class CustomDrawer extends StatelessWidget {
             leading: Icon(Icons.list),
             title: Text('Задачи'),
             onTap: () {
-              Navigator.pushReplacementNamed(context, '/tasks');
+              if (ModalRoute.of(context)?.settings.name == '/tasks') return;
+              
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/tasks');
             },
           ),
           ListTile(
             leading: Icon(Icons.mood),
             title: Text('Шутка'),
             onTap: () {
-              Navigator.pushReplacementNamed(context, '/fun');
+              if (ModalRoute.of(context)?.settings.name == '/fun') return;
+
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/fun');
             },
           ),
         ],
