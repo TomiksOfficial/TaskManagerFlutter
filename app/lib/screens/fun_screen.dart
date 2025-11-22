@@ -2,17 +2,21 @@ import 'package:flutter/material.dart';
 import '../viewmodels/fun_viewmodel.dart';
 import '../widgets/custom_drawer.dart';
 
-// class FunScreen extends StatefulWidget {
-//   const FunScreen({super.key});
+class FunScreen extends StatefulWidget {
+  const FunScreen({super.key});
 
-//   @override
-//   State<FunScreen> createState() => _FunScreenState();
-// }
+  @override
+  State<FunScreen> createState() => _FunScreenState();
+}
 
-class FunScreen extends StatelessWidget {
+class _FunScreenState extends State<FunScreen> {
   final FunViewModel _viewModel = FunViewModel();
 
-  FunScreen({super.key});
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,17 +35,22 @@ class FunScreen extends StatelessWidget {
                   elevation: 4,
                   child: Padding(
                     padding: EdgeInsets.all(24),
-                    child: Text(
-                      _viewModel.currentQuote,
-                      style: TextStyle(fontSize: 18),
-                      textAlign: TextAlign.center,
-                    ),
+                    child: _viewModel.isLoading
+                        ? CircularProgressIndicator()
+                        : Text(
+                            _viewModel.currentQuote,
+                            style: TextStyle(fontSize: 18),
+                            textAlign: TextAlign.center,
+                          ),
                   ),
                 ),
+                SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: () {
-                    _viewModel.updateQuote();
-                  },
+                  onPressed: _viewModel.isLoading
+                      ? null
+                      : () {
+                          _viewModel.fetchJoke();
+                        },
                   icon: Icon(Icons.refresh),
                   label: Text('Обновить'),
                   style: ElevatedButton.styleFrom(

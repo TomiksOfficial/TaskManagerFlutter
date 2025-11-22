@@ -5,18 +5,27 @@ import '../widgets/filter_toggle.dart';
 import '../widgets/custom_drawer.dart';
 import '../screens/add_edit_task_screen.dart';
 
-// class TasksScreen extends StatefulWidget {
-//   const TasksScreen({super.key});
+class TasksScreen extends StatefulWidget {
+  const TasksScreen({super.key});
 
-//   @override
-//   State<TasksScreen> createState() => _TasksScreenState();
-// }
+  @override
+  State<TasksScreen> createState() => _TasksScreenState();
+}
 
-class TasksScreen extends StatelessWidget {
+class _TasksScreenState extends State<TasksScreen> {
   final TasksViewModel _viewModel = TasksViewModel();
-  final BuildContext context;
 
-  TasksScreen({super.key, required this.context});
+  @override
+  void initState() {
+    super.initState();
+    _viewModel.loadTasks();
+  }
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
 
   void _addTask() async {
     final result = await Navigator.push<Map<String, dynamic>>(
@@ -26,7 +35,7 @@ class TasksScreen extends StatelessWidget {
       ),
     );
     if (result != null && result['action'] == 'save') {
-      _viewModel.addTask(result['title'], result['desc']);
+      await _viewModel.addTask(result['title'], result['desc']);
       _showSnackBar('Задача добавлена');
     }
   }
@@ -42,7 +51,7 @@ class TasksScreen extends StatelessWidget {
         builder: (context) => AddEditTaskScreen(
           viewModel: _viewModel,
           isEdit: true,
-          task: task.toMap(),
+          task: task.toMapLegacy(),
           taskIndex: originalIndex,
         ),
       ),
@@ -50,10 +59,11 @@ class TasksScreen extends StatelessWidget {
 
     if (result != null) {
       if (result['action'] == 'save') {
-        _viewModel.updateTask(originalIndex, result['title'], result['desc']);
+        await _viewModel.updateTask(
+            originalIndex, result['title'], result['desc']);
         _showSnackBar('Задача обновлена');
       } else if (result['action'] == 'delete') {
-        _viewModel.deleteTask(originalIndex);
+        await _viewModel.deleteTask(originalIndex);
         _showSnackBar('Задача удалена');
       }
     }
@@ -76,6 +86,10 @@ class TasksScreen extends StatelessWidget {
       body: AnimatedBuilder(
         animation: _viewModel,
         builder: (context, _) {
+          if (_viewModel.isLoading) {
+            return Center(child: CircularProgressIndicator());
+          }
+
           final filteredTasks = _viewModel.filteredTasks;
           return Column(
             children: [
@@ -125,7 +139,7 @@ class TasksScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addTask,
-        tooltip: 'Добавить задачу!',
+        tooltip: 'Добавить задачу',
         child: Icon(Icons.add),
       ),
     );

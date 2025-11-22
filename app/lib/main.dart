@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/fun_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(TaskManagerApp());
 }
 
@@ -14,12 +15,13 @@ class TaskManagerApp extends StatelessWidget {
     return MaterialApp(
       title: 'Менеджер задач',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 177, 22, 212)),
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color.fromARGB(255, 177, 22, 212)),
         useMaterial3: true,
       ),
       initialRoute: '/tasks',
       routes: {
-        '/tasks': (context) => TasksScreen(context: context),
+        '/tasks': (context) => TasksScreen(),
         '/fun': (context) => FunScreen(),
       },
     );
