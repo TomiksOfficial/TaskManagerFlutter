@@ -69,3 +69,5 @@ app.*.map.json
 /ios/.flutter-plugins/
 /ios/.flutter-plugins-dependencies/
 /ios/Podfile.lock
+
+app/linux/

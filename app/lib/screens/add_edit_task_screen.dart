@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import '../viewmodels/tasks_viewmodel.dart';
 
 class AddEditTaskScreen extends StatefulWidget {
+  final TasksViewModel viewModel;
   final bool isEdit;
   final Map<String, dynamic>? task;
   final int? taskIndex;
 
   const AddEditTaskScreen({
     super.key,
+    required this.viewModel,
     this.isEdit = false,
     this.task,
     this.taskIndex,

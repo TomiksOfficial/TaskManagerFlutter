@@ -19,7 +19,7 @@ class TaskManagerApp extends StatelessWidget {
       ),
       initialRoute: '/tasks',
       routes: {
-        '/tasks': (context) => TasksScreen(),
+        '/tasks': (context) => TasksScreen(context: context),
         '/fun': (context) => FunScreen(),
       },
     );

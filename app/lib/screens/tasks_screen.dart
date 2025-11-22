@@ -1,73 +1,61 @@
 import 'package:flutter/material.dart';
+import '../viewmodels/tasks_viewmodel.dart';
 import '../widgets/task_list_tile.dart';
 import '../widgets/filter_toggle.dart';
 import '../widgets/custom_drawer.dart';
 import '../screens/add_edit_task_screen.dart';
 
-class TasksScreen extends StatefulWidget {
-  const TasksScreen({super.key});
+// class TasksScreen extends StatefulWidget {
+//   const TasksScreen({super.key});
 
-  @override
-  State<TasksScreen> createState() => _TasksScreenState();
-}
+//   @override
+//   State<TasksScreen> createState() => _TasksScreenState();
+// }
 
-class _TasksScreenState extends State<TasksScreen> {
-  String filter = 'all';
-  List<Map<String, dynamic>> tasks = [
-    {'title': 'Учеба', 'desc': 'Подготовить отчёт', 'done': false},
-    {'title': 'Магазин', 'desc': 'Купить продукты', 'done': true},
-  ];
+class TasksScreen extends StatelessWidget {
+  final TasksViewModel _viewModel = TasksViewModel();
+  final BuildContext context;
 
-  List<Map<String, dynamic>> get filteredTasks =>
-      filter == 'all' ? tasks : tasks.where((t) => t['done'] == true).toList();
+  TasksScreen({super.key, required this.context});
 
   void _addTask() async {
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
-        builder: (context) => AddEditTaskScreen(),
+        builder: (context) => AddEditTaskScreen(viewModel: _viewModel),
       ),
     );
-
     if (result != null && result['action'] == 'save') {
-      setState(() {
-        tasks.add({
-          'title': result['title'],
-          'desc': result['desc'],
-          'done': false,
-        });
-      });
+      _viewModel.addTask(result['title'], result['desc']);
       _showSnackBar('Задача добавлена');
     }
   }
 
   void _editTask(int index) async {
-    final originalIndex = tasks.indexOf(filteredTasks[index]);
+    final filteredTasks = _viewModel.filteredTasks;
+    final task = filteredTasks[index];
+    final originalIndex = _viewModel.getOriginalIndex(task);
+
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
         builder: (context) => AddEditTaskScreen(
+          viewModel: _viewModel,
           isEdit: true,
-          task: tasks[originalIndex],
+          task: task.toMap(),
           taskIndex: originalIndex,
         ),
       ),
     );
 
     if (result != null) {
-      setState(() {
-        if (result['action'] == 'save') {
-          tasks[originalIndex] = {
-            'title': result['title'],
-            'desc': result['desc'],
-            'done': tasks[originalIndex]['done'],
-          };
-          _showSnackBar('Задача обновлена');
-        } else if (result['action'] == 'delete') {
-          tasks.removeAt(originalIndex);
-          _showSnackBar('Задача удалена');
-        }
-      });
+      if (result['action'] == 'save') {
+        _viewModel.updateTask(originalIndex, result['title'], result['desc']);
+        _showSnackBar('Задача обновлена');
+      } else if (result['action'] == 'delete') {
+        _viewModel.deleteTask(originalIndex);
+        _showSnackBar('Задача удалена');
+      }
     }
   }
 
@@ -85,57 +73,59 @@ class _TasksScreenState extends State<TasksScreen> {
     return Scaffold(
       appBar: AppBar(title: Text('Задачи')),
       drawer: CustomDrawer(),
-      body: Column(
-        children: [
-          FilterToggle(
-            selected: filter,
-            onFilterChanged: (value) {
-              setState(() {
-                filter = value;
-              });
-            },
-          ),
-          Expanded(
-            child: filteredTasks.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.task_alt, size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text(
-                          filter == 'all'
-                              ? 'Нет задач'
-                              : 'Нет завершённых задач',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
+      body: AnimatedBuilder(
+        animation: _viewModel,
+        builder: (context, _) {
+          final filteredTasks = _viewModel.filteredTasks;
+          return Column(
+            children: [
+              FilterToggle(
+                selected: _viewModel.filter,
+                onFilterChanged: (value) {
+                  _viewModel.setFilter(value);
+                },
+              ),
+              Expanded(
+                child: filteredTasks.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.task_alt, size: 64, color: Colors.grey),
+                            SizedBox(height: 16),
+                            Text(
+                              _viewModel.filter == 'all'
+                                  ? 'Нет задач'
+                                  : 'Нет завершённых задач',
+                              style: TextStyle(fontSize: 18, color: Colors.grey),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: filteredTasks.length,
-                    itemBuilder: (context, index) {
-                      final task = filteredTasks[index];
-                      final originalIndex = tasks.indexOf(task);
-                      return TaskListTile(
-                        title: task['title'] as String,
-                        description: task['desc'] as String,
-                        completed: task['done'] as bool,
-                        onChanged: (val) {
-                          setState(() {
-                            tasks[originalIndex]['done'] = val ?? false;
-                          });
+                      )
+                    : ListView.builder(
+                        itemCount: filteredTasks.length,
+                        itemBuilder: (context, index) {
+                          final task = filteredTasks[index];
+                          final originalIndex = _viewModel.getOriginalIndex(task);
+                          return TaskListTile(
+                            title: task.title,
+                            description: task.description,
+                            completed: task.done,
+                            onChanged: (val) {
+                              _viewModel.toggleTaskDone(originalIndex);
+                            },
+                            onTap: () => _editTask(index),
+                          );
                         },
-                        onTap: () => _editTask(index),
-                      );
-                    },
-                  ),
-          ),
-        ],
+                      ),
+              ),
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addTask,
-        tooltip: 'Добавить задачу',
+        tooltip: 'Добавить задачу!',
         child: Icon(Icons.add),
       ),
     );
